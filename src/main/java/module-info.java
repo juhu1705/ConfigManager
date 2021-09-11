@@ -1,4 +1,4 @@
-module ConfigManager.config {
+module de.noisruker.config {
     requires java.base;
     requires org.controlsfx.controls;
     requires de.noisruker.event;
