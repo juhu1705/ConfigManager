@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'org.openjfx.javafxplugin' version '0.0.9'
+}
+
+javafx {
+    version = "17"
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/juhu1705/configmanager")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            group 'de.noisruker'
+            version '1.0.0'
+            artifactId 'configmanager'
+
+            from(components.java)
+        }
+    }
+}
+
+
+
+repositories {
+    mavenCentral()
+    maven {
+        url = uri("https://maven.pkg.github.com/juhu1705/eventmanager")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+    maven {
+        url = uri("https://maven.pkg.github.com/juhu1705/logger")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+    implementation 'de.noisruker:logger:1.0.0'
+    implementation 'de.noisruker:event-manager:1.0.1'
+    implementation 'org.controlsfx:controlsfx:11.1.0'
+}
+
+test {
+    useJUnitPlatform()
+}
