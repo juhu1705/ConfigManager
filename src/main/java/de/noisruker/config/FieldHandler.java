@@ -35,7 +35,7 @@ import java.lang.reflect.Field;
  * @see ContentHandler
  * @see ConfigManager#load(String)
  */
-public class FieldHandler implements ContentHandler {
+class FieldHandler implements ContentHandler {
 
     /**
      * Zwischenspeicherung für die einzulesenden Daten.
