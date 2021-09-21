@@ -691,7 +691,7 @@ public class ConfigManager {
                 continue;
             ConfigElement e = f.getAnnotation(ConfigElement.class);
             try {
-                this.onConfigChanged(e.name(), (String) f.get(null));
+                this.onConfigChanged(e.name(), String.valueOf(f.get(null)));
             } catch (IllegalAccessException | IllegalArgumentException | NullPointerException ignored) { }
         }
     }
