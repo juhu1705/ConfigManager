@@ -350,7 +350,6 @@ public class ConfigManager {
             if (actual != null)
                 location.insert(0, actual.getValue() + ".");
         }
-        LOGGER.info(location.toString());
         configurations.getChildren().clear();
 
         VBox checks = new VBox();
@@ -377,8 +376,6 @@ public class ConfigManager {
             for (String s : e.location().split("\\."))
                 if (!s.isEmpty())
                     fieldlocation.append(fieldlocation.toString().equals("") ? "" : ".").append(language != null ? language.getString("config.location." + s) : s);
-
-            LOGGER.info(fieldlocation.toString());
 
             // Checks if this element is part of the configs for the selected tree item
             if (!fieldlocation.toString().equalsIgnoreCase(location.toString()))
