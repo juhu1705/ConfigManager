@@ -29,7 +29,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
@@ -45,7 +44,10 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.PropertyResourceBundle;
 import java.util.logging.Level;
 
 import static de.noisruker.logger.Logger.LOGGER;
@@ -286,8 +288,8 @@ public class ConfigManager {
      * @param configurations Die Box, in der die Konfigurationen zum ausgewählten Thema bearbeitet werden können.
      * @param language Die Sprachdatei mit den Übersetzungen der Werte oder {@code null}, wenn die Werte nicht übersetzt werden sollen.
      */
-    public void createMenuTree(TreeView<String> tree, VBox configurations, final PropertyResourceBundle language) {
-        TreeItem<String> root = new TreeItem<>(language != null ? language.getString("config.location") : "Settings");
+    public void createMenuTree(final TreeView<String> tree, final VBox configurations, final PropertyResourceBundle language) {
+        TreeItem<String> root = new TreeItem<>(language != null ? language.getString("config.location.config") : "Settings");
 
         root.setExpanded(true);
 
@@ -327,271 +329,261 @@ public class ConfigManager {
         }
 
         // Build Config Elements when Tree Item is selected
-        tree.addEventHandler(MouseEvent.MOUSE_CLICKED, (event -> {
-            TreeItem<String> selected = tree.getSelectionModel().getSelectedItem();
+        tree.getSelectionModel().selectedItemProperty().addListener(((observable, oldValue, newValue) -> this.displayConfigValues(tree, configurations, language)));
+        tree.getSelectionModel().select(0);
+    }
 
-            if (selected == null)
-                return;
-            StringBuilder location = new StringBuilder(selected.getValue());
+    private void displayConfigValues(final TreeView<String> tree, final VBox configurations, final PropertyResourceBundle language) {
+        TreeItem<String> selected = tree.getSelectionModel().getSelectedItem();
 
-            TreeItem<String> actual = selected;
+        if (selected == null)
+            return;
+        StringBuilder location = new StringBuilder(selected.getValue());
+
+        TreeItem<String> actual = selected;
+
+        // Gets the config path position
+        while (actual != null) {
+
+            actual = actual.getParent();
+
+            if (actual != null)
+                location.insert(0, actual.getValue() + ".");
+        }
+        LOGGER.info(location.toString());
+        configurations.getChildren().clear();
+
+        VBox checks = new VBox();
+        checks.setPadding(new Insets(20, 0, 0, 0));
+        Label checksLabel = new Label((language != null ? language.getString("config.booleans") : "Further Configurations") + ":");
+        checksLabel.setWrapText(true);
+        checks.getChildren().add(checksLabel);
+        checks.setSpacing(20);
+
+        for (Field f : this.fields) {
+
+            // Checks if field is a config element
+            if (f.getAnnotation(ConfigElement.class) == null)
+                continue;
+            ConfigElement e = f.getAnnotation(ConfigElement.class);
+
+            // Checks if field should show up
+            if (!e.visible())
+                continue;
+
+            // Builds the path of the Element
+            StringBuilder fieldlocation = new StringBuilder();
+
+            for (String s : e.location().split("\\."))
+                if (!s.isEmpty())
+                    fieldlocation.append(fieldlocation.toString().equals("") ? "" : ".").append(language != null ? language.getString("config.location." + s) : s);
+
+            LOGGER.info(fieldlocation.toString());
+
+            // Checks if this element is part of the configs for the selected tree item
+            if (!fieldlocation.toString().equalsIgnoreCase(location.toString()))
+                continue;
 
 
-            // Gets the config path position
-            while (actual != null) {
+            if (e.type() == ConfigElementType.CHECK) {
+                HBox check = new HBox();
+                check.setAlignment(Pos.CENTER_LEFT);
+                check.setSpacing(20);
 
-                actual = actual.getParent();
+                ToggleSwitch toggleSwitch = new ToggleSwitch();
 
-                if (actual != null)
-                    location.insert(0, actual.getValue() + ".");
-
-            }
-
-            configurations.getChildren().clear();
-
-            VBox checks = new VBox();
-            checks.setPadding(new Insets(20, 0, 0, 0));
-            Label checksLabel = new Label((language != null ? language.getString("config.booleans") : "Further Configurations") + ":");
-            checksLabel.setWrapText(true);
-            checks.getChildren().add(checksLabel);
-            checks.setSpacing(20);
-
-            for (Field f : this.fields) {
-
-                // Checks if field is a config element
-                if (f.getAnnotation(ConfigElement.class) == null)
-                    continue;
-                ConfigElement e = f.getAnnotation(ConfigElement.class);
-
-                // Checks if field should show up
-                if (!e.visible())
-                    continue;
-
-                // Builds the path of the Element
-                StringBuilder fieldlocation = new StringBuilder();
-
-                for (String s : e.location().split("\\."))
-                    if (!s.isEmpty())
-                        fieldlocation.append(fieldlocation.toString().equals("") ? "" : ".").append(language != null ? language.getString("config.location." + s) : s);
-
-                /*
-                TODO: Recheck and delete. Not used old code for True/False configurations
-                if (location.toString().equalsIgnoreCase(fieldlocation + "." + (language != null ? language.getString("config." + e.name()) : e.name()))) {
-                    TextArea ta = new TextArea(language != null ? language.getString("config." + e.description()) : e.description());
-
-                    ta.setEditable(false);
-                    ta.setWrapText(true);
-
-                    configurations.getChildren()
-                            .addAll(new Label((language != null ? language.getString("label.description") : "Description") + ":"), ta);
+                try {
+                    toggleSwitch.setSelected(f.getBoolean(null));
+                } catch (IllegalAccessException ignored) {
                 }
-                */
 
-                // Checks if this element is part of the configs for the selected tree item
-                if (!fieldlocation.toString().equalsIgnoreCase(location.toString()))
-                    continue;
-
-
-                if (e.type().equals(ConfigElementType.CHECK)) {
-                    HBox check = new HBox();
-                    check.setAlignment(Pos.CENTER_LEFT);
-                    check.setSpacing(20);
-
-                    ToggleSwitch toggleSwitch = new ToggleSwitch();
-
-                    try {
-                        toggleSwitch.setSelected(f.getBoolean(null));
-                    } catch (IllegalAccessException ignored) {
+                toggleSwitch.selectedProperty().addListener((o, oldValue, newValue) -> {
+                    if (oldValue != newValue) {
+                        Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
+                        if(message instanceof String) {
+                            LOGGER.log(Level.WARNING, (String) message,
+                                    new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
+                            toggleSwitch.setSelected(oldValue);
+                            return;
+                        }
+                        try {
+                            f.set(null, newValue);
+                        } catch (IllegalAccessException ignored) { }
+                        this.onConfigChanged(e.name(), String.valueOf(newValue));
                     }
+                });
 
-                    toggleSwitch.selectedProperty().addListener((o, oldValue, newValue) -> {
-                        if (oldValue != newValue) {
-                            Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
-                            if(message instanceof String) {
-                                LOGGER.log(Level.WARNING, (String) message,
-                                        new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
-                                toggleSwitch.setSelected(oldValue);
-                                return;
-                            }
-                            try {
+                this.listeners.add(new ChangeEntry(e.name(), () -> {
+                    try {
+                        toggleSwitch.setSelected((Boolean) f.get(null));
+                    } catch (IllegalArgumentException | IllegalAccessException ignored) {
+                    }
+                }));
+
+                toggleSwitch.setPrefWidth(27.0);
+                Tooltip t = new Tooltip(language != null ? language.getString("config." + e.description()): e.description());
+                toggleSwitch.setTooltip(t);
+                Label l = new Label(language != null ? language.getString("config." + e.name()) : e.name());
+                l.setAlignment(Pos.CENTER);
+                l.setPrefHeight(18);
+                l.setWrapText(true);
+                l.setTooltip(t);
+
+                check.getChildren().addAll(toggleSwitch, l);
+
+                checks.getChildren().addAll(check);
+            } else if (e.type() == ConfigElementType.COUNT) {
+                Spinner<Integer> cb = new Spinner<>();
+                cb.setTooltip(new Tooltip(language != null ? language.getString("config." + e.description()) : e.description()));
+                cb.setEditable(true);
+                cb.setMaxWidth(Double.MAX_VALUE);
+                this.listeners.add(new ChangeEntry(e.name(), () -> {
+                    try {
+                        cb.getValueFactory().setValue(f.getInt(null));
+                    } catch (IllegalArgumentException | IllegalAccessException ignored) {
+                    }
+                }));
+                try {
+                    cb.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(this.minCounting.getOrDefault(e.name(), 0),
+                            this.maxCounting.getOrDefault(e.name(), Integer.MAX_VALUE), f.getInt(null)));
+                    cb.getValueFactory().valueProperty().addListener((o, oldValue, newValue) -> {
+                        try {
+                            if (!Objects.equals(oldValue, newValue)) {
+                                Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
+                                if(message instanceof String) {
+                                    LOGGER.log(Level.WARNING, (String) message,
+                                            new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
+                                    cb.getValueFactory().setValue(oldValue);
+                                    return;
+                                }
                                 f.set(null, newValue);
-                            } catch (IllegalAccessException ignored) { }
-                            this.onConfigChanged(e.name(), String.valueOf(newValue));
+                                this.onConfigChanged(e.name(), String.valueOf(newValue));
+                            }
+
+                        } catch (IllegalArgumentException | IllegalAccessException e1) {
+                            e1.printStackTrace();
                         }
                     });
+                } catch (IllegalArgumentException | IllegalAccessException e3) {
+                    e3.printStackTrace();
+                }
 
-                    this.listeners.add(new ChangeEntry(e.name(), () -> {
-                        try {
-                            toggleSwitch.setSelected((Boolean) f.get(null));
-                        } catch (IllegalArgumentException | IllegalAccessException ignored) {
-                        }
-                    }));
+                Label l = new Label(((language != null ? language.getString("config." + e.name()) : e.name()) + ":"));
+                l.setWrapText(true);
+                l.autosize();
+                configurations.getChildren().addAll(l, cb);
+            } else if (e.type() == ConfigElementType.TEXT) {
 
-                    toggleSwitch.setPrefWidth(27.0);
-                    Tooltip t = new Tooltip(language != null ? language.getString("config." + e.description()): e.description());
-                    toggleSwitch.setTooltip(t);
-                    Label l = new Label(language != null ? language.getString("config." + e.name()) : e.name());
-                    l.setAlignment(Pos.CENTER);
-                    l.setPrefHeight(18);
-                    l.setWrapText(true);
-                    l.setTooltip(t);
+                TextField cb = new TextField();
+                cb.setTooltip(new Tooltip(language != null ? language.getString("config." + e.description()) : e.description()));
+                cb.setMaxWidth(Double.MAX_VALUE);
 
-                    check.getChildren().addAll(toggleSwitch, l);
+                try {
+                    cb.setText((String) f.get(null));
+                } catch (IllegalArgumentException | IllegalAccessException e2) {
+                    e2.printStackTrace();
+                }
 
-                    checks.getChildren().addAll(check);
-                } else if (e.type().equals(ConfigElementType.COUNT)) {
-                    Spinner<Integer> cb = new Spinner<>();
-                    cb.setTooltip(new Tooltip(language != null ? language.getString("config." + e.description()) : e.description()));
-                    cb.setEditable(true);
-                    cb.setMaxWidth(Double.MAX_VALUE);
-                    this.listeners.add(new ChangeEntry(e.name(), () -> {
-                        try {
-                            cb.getValueFactory().setValue(f.getInt(null));
-                        } catch (IllegalArgumentException | IllegalAccessException ignored) {
-                        }
-                    }));
-                    try {
-                        cb.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(this.minCounting.getOrDefault(e.name(), 0),
-                                this.maxCounting.getOrDefault(e.name(), Integer.MAX_VALUE), f.getInt(null)));
-                        cb.getValueFactory().valueProperty().addListener((o, oldValue, newValue) -> {
-                            try {
-                                if (!Objects.equals(oldValue, newValue)) {
-                                    Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
-                                    if(message instanceof String) {
-                                        LOGGER.log(Level.WARNING, (String) message,
-                                                new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
-                                        cb.getValueFactory().setValue(oldValue);
-                                        return;
-                                    }
-                                    f.set(null, newValue);
-                                    this.onConfigChanged(e.name(), String.valueOf(newValue));
-                                }
-
-                            } catch (IllegalArgumentException | IllegalAccessException e1) {
-                                e1.printStackTrace();
-                            }
-                        });
-                    } catch (IllegalArgumentException | IllegalAccessException e3) {
-                        e3.printStackTrace();
-                    }
-
-                    Label l = new Label(((language != null ? language.getString("config." + e.name()) : e.name()) + ":"));
-                    l.setWrapText(true);
-                    l.autosize();
-                    configurations.getChildren().addAll(l, cb);
-                } else if (e.type().equals(ConfigElementType.TEXT)) {
-
-                    TextField cb = new TextField();
-                    cb.setTooltip(new Tooltip(language != null ? language.getString("config." + e.description()) : e.description()));
-                    cb.setMaxWidth(Double.MAX_VALUE);
-
+                this.listeners.add(new ChangeEntry(e.name(), () -> {
                     try {
                         cb.setText((String) f.get(null));
-                    } catch (IllegalArgumentException | IllegalAccessException e2) {
-                        e2.printStackTrace();
+                    } catch (IllegalArgumentException | IllegalAccessException ignored) {
+
+                    }
+                }));
+
+                cb.addEventHandler(KeyEvent.KEY_RELEASED, events -> {
+                    try {
+                        Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getText(), cb.getText()));
+                        if(message instanceof String) {
+                            LOGGER.log(Level.WARNING, (String) message,
+                                    new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
+                            try {
+                                cb.setText((String) f.get(null));
+                            } catch (IllegalArgumentException | IllegalAccessException ignored) { }
+                            return;
+                        }
+
+                        f.set(null, cb.getText());
+                        this.onConfigChanged(e.name(), cb.getText());
+                    } catch (IllegalArgumentException | IllegalAccessException e1) {
+                        e1.printStackTrace();
+                    }
+                });
+                Label l = new Label((language != null ? language.getString("config." + e.name()) : e.name() + ":"));
+                l.setWrapText(true);
+                l.autosize();
+
+                configurations.getChildren().addAll(l, cb);
+            } else if (e.type() == ConfigElementType.CHOOSE && this.options.containsKey(e.name())) {
+
+                ComboBox<String> cb = new ComboBox<>();
+                cb.setTooltip(new Tooltip(language != null ? language.getString("config." + e.description()) : e.description()));
+
+                cb.setItems(FXCollections.observableArrayList(this.options.get(e.name())));
+
+                cb.setMaxWidth(Double.MAX_VALUE);
+
+                cb.setConverter(new StringConverter<>() {
+                    @Override
+                    public String toString(String s) {
+                        if (language != null && language.containsKey(e.name() + "." + s))
+                            return language.getString(e.name() + "." + s);
+                        return s;
                     }
 
-                    this.listeners.add(new ChangeEntry(e.name(), () -> {
-                        try {
-                            cb.setText((String) f.get(null));
-                        } catch (IllegalArgumentException | IllegalAccessException ignored) {
-
-                        }
-                    }));
-
-                    cb.addEventHandler(KeyEvent.KEY_RELEASED, events -> {
-                        try {
-                            Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getText(), cb.getText()));
-                            if(message instanceof String) {
-                                LOGGER.log(Level.WARNING, (String) message,
-                                        new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
-                                try {
-                                    cb.setText((String) f.get(null));
-                                } catch (IllegalArgumentException | IllegalAccessException ignored) { }
-                                return;
-                            }
-
-                            f.set(null, cb.getText());
-                            this.onConfigChanged(e.name(), cb.getText());
-                        } catch (IllegalArgumentException | IllegalAccessException e1) {
-                            e1.printStackTrace();
-                        }
-                    });
-                    Label l = new Label((language != null ? language.getString("config." + e.name()) : e.name() + ":"));
-                    l.setWrapText(true);
-                    l.autosize();
-
-                    configurations.getChildren().addAll(l, cb);
-                } else if (e.type().equals(ConfigElementType.CHOOSE) && this.options.containsKey(e.name())) {
-
-                    ComboBox<String> cb = new ComboBox<>();
-                    cb.setTooltip(new Tooltip(language != null ? language.getString("config." + e.description()) : e.description()));
-
-                    cb.setItems(FXCollections.observableArrayList(this.options.get(e.name())));
-
-                    cb.setMaxWidth(Double.MAX_VALUE);
-
-                    cb.setConverter(new StringConverter<>() {
-                        @Override
-                        public String toString(String s) {
-                            if (language != null && language.containsKey(e.name() + "." + s))
-                                return language.getString(e.name() + "." + s);
+                    @Override
+                    public String fromString(String s) {
+                        if (language == null)
                             return s;
+                        for (String string : language.keySet()) {
+                            if (s.equals(language.getString(e.name() + "." + string)))
+                                return string;
                         }
+                        return s;
+                    }
+                });
 
-                        @Override
-                        public String fromString(String s) {
-                            if (language == null)
-                                return s;
-                            for (String string : language.keySet()) {
-                                if (s.equals(language.getString(e.name() + "." + string)))
-                                    return string;
-                            }
-                            return s;
-                        }
-                    });
+                try {
+                    cb.setValue((String) f.get(null));
+                } catch (IllegalArgumentException | IllegalAccessException e2) {
+                    e2.printStackTrace();
+                }
 
+                this.listeners.add(new ChangeEntry(e.name(), () -> {
                     try {
                         cb.setValue((String) f.get(null));
-                    } catch (IllegalArgumentException | IllegalAccessException e2) {
-                        e2.printStackTrace();
+                    } catch (IllegalArgumentException | IllegalAccessException ignored) {
+
                     }
+                }));
 
-                    this.listeners.add(new ChangeEntry(e.name(), () -> {
-                        try {
-                            cb.setValue((String) f.get(null));
-                        } catch (IllegalArgumentException | IllegalAccessException ignored) {
-
+                cb.addEventHandler(ActionEvent.ANY, events -> {
+                    try {
+                        Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getValue(), cb.getValue()));
+                        if(message instanceof String) {
+                            LOGGER.log(Level.WARNING, (String) message,
+                                    new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
+                            try {
+                                cb.setValue((String) f.get(null));
+                            } catch (IllegalArgumentException | IllegalAccessException ignored) { }
+                            return;
                         }
-                    }));
+                        f.set(null, cb.getValue());
+                        this.onConfigChanged(e.name(), cb.getValue());
+                    } catch (IllegalArgumentException | IllegalAccessException e1) {
+                        e1.printStackTrace();
+                    }
+                });
+                Label l = new Label((language != null ? language.getString("config." + e.name()) : e.name() + ":"));
+                l.setWrapText(true);
+                l.autosize();
 
-                    cb.addEventHandler(ActionEvent.ANY, events -> {
-                        try {
-                            Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getValue(), cb.getValue()));
-                            if(message instanceof String) {
-                                LOGGER.log(Level.WARNING, (String) message,
-                                        new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
-                                try {
-                                    cb.setValue((String) f.get(null));
-                                } catch (IllegalArgumentException | IllegalAccessException ignored) { }
-                                return;
-                            }
-                            f.set(null, cb.getValue());
-                            this.onConfigChanged(e.name(), cb.getValue());
-                        } catch (IllegalArgumentException | IllegalAccessException e1) {
-                            e1.printStackTrace();
-                        }
-                    });
-                    Label l = new Label((language != null ? language.getString("config." + e.name()) : e.name() + ":"));
-                    l.setWrapText(true);
-                    l.autosize();
-
-                    configurations.getChildren().addAll(l, cb);
-                }
+                configurations.getChildren().addAll(l, cb);
             }
-            if (checks.getChildren().size() > 1)
-                configurations.getChildren().add(checks);
-        }));
+        }
+        if (checks.getChildren().size() > 1)
+            configurations.getChildren().add(checks);
     }
 
     private final HashMap<String, Integer> maxCounting = new HashMap<>();
