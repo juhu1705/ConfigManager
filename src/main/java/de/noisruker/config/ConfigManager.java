@@ -483,7 +483,8 @@ public class ConfigManager {
 
                 this.listeners.add(new ChangeEntry(e.name(), () -> {
                     try {
-                        cb.setText((String) f.get(null));
+                        if(!cb.getText().equals(f.get(null)))
+                            cb.setText((String) f.get(null));
                     } catch (IllegalArgumentException | IllegalAccessException ignored) {
 
                     }
