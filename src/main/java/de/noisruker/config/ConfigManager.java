@@ -334,6 +334,8 @@ public class ConfigManager {
     }
 
     private void displayConfigValues(final TreeView<String> tree, final VBox configurations, final PropertyResourceBundle language) {
+        listeners.clear();
+
         TreeItem<String> selected = tree.getSelectionModel().getSelectedItem();
 
         if (selected == null)
@@ -406,7 +408,7 @@ public class ConfigManager {
                         try {
                             f.set(null, newValue);
                         } catch (IllegalAccessException ignored) { }
-                        this.onConfigChanged(e.name(), String.valueOf(newValue));
+                        this.onConfigChangedExternal(e.name(), String.valueOf(newValue));
                     }
                 });
 
@@ -454,7 +456,7 @@ public class ConfigManager {
                                     return;
                                 }
                                 f.set(null, newValue);
-                                this.onConfigChanged(e.name(), String.valueOf(newValue));
+                                this.onConfigChangedExternal(e.name(), String.valueOf(newValue));
                             }
 
                         } catch (IllegalArgumentException | IllegalAccessException e1) {
@@ -503,7 +505,7 @@ public class ConfigManager {
                         }
 
                         f.set(null, cb.getText());
-                        this.onConfigChanged(e.name(), cb.getText());
+                        this.onConfigChangedExternal(e.name(), cb.getText());
                     } catch (IllegalArgumentException | IllegalAccessException e1) {
                         e1.printStackTrace();
                     }
@@ -568,7 +570,7 @@ public class ConfigManager {
                             return;
                         }
                         f.set(null, cb.getValue());
-                        this.onConfigChanged(e.name(), cb.getValue());
+                        this.onConfigChangedExternal(e.name(), cb.getValue());
                     } catch (IllegalArgumentException | IllegalAccessException e1) {
                         e1.printStackTrace();
                     }
@@ -649,6 +651,10 @@ public class ConfigManager {
 
         // FOR THE EVENT MANAGER
 
+        EventManager.getInstance().triggerEvent(new ConfigEntryChangeEvent(fieldName, value));
+    }
+
+    private void onConfigChangedExternal(String fieldName, String value) {
         EventManager.getInstance().triggerEvent(new ConfigEntryChangeEvent(fieldName, value));
     }
 
