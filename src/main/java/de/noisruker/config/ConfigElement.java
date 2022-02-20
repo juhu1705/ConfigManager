@@ -40,7 +40,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * @author Juhu1705
  * @version 1.0
- * @category Config
  */
 @Retention(RUNTIME)
 @Target(FIELD)
@@ -48,7 +47,8 @@ public @interface ConfigElement {
 
     /**
      * @return Den Standardmäßig gesetzte Initialwert.
-     * @implNote Nur Strings werden automatisch richtig initialisiert. Bitte den
+     * <p>
+     * Nur Strings werden automatisch richtig initialisiert. Bitte den
      * gewünschten Wert standardmäßig einprogrammieren. Dieser wird
      * überschrieben, sobald die Konfigurationsdatei geladen wird.
      */
@@ -64,22 +64,24 @@ public @interface ConfigElement {
     /**
      * @return Den in den Sprachdateien hinterlegten Übersetzungsstring für die
      * Beschreibung der Konfiguration
-     * @implNote Der hinterlegte String muss, damit dass Programm läuft, in den
-     * Sprachdateien hinterlegt sein.
+     * <p>
+     * Der hinterlegte String muss, damit dass Programm läuft, in den
+     * Sprachdateien hinterlegt sein, sollten diese genutzt werden.
      */
     String description();
 
     /**
      * @return Den in den Sprachdateien hinterlegten Key zum Übersetzten des Namens.
-     * @implNote Der hinterlegte String muss, damit dass Programm läuft in den
-     * Sprachdateien hinterlegt sein.
+     * <p>
+     * Der hinterlegte String muss, damit dass Programm läuft in den
+     * Sprachdateien hinterlegt sein, sollten diese genutzt werden.
      */
     String name();
 
     /**
      * @return Die Position im Baumsystem, unter der die Config zu finden ist.
-     * @implNote Der hinterlegte String muss, damit dass Programm läuft in den
-     * Sprachdateien hinterlegt sein. Ein "." trennt die Strings. Jeder
+     * Der hinterlegte String muss, damit dass Programm läuft in den
+     * Sprachdateien hinterlegt sein, sollten diese genutzt werden. Ein "." trennt die Strings. Jeder
      * Einzelstring wird mit "String".location gesucht.
      */
     String location();

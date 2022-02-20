@@ -1,64 +1,94 @@
 plugins {
     id 'java'
+    id 'java-library'
     id 'maven-publish'
     id 'org.openjfx.javafxplugin' version '0.0.10'
 }
+
+group 'de.noisruker'
+version '1.0.3'
 
 javafx {
     version = "17"
     modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'config-manager'
+            from components.java
+            pom {
+                name = 'ConfigManager'
+                description = 'A libary for controling configuration files'
+                url = 'https://github.com/juhu1705/ConfigManager'
+                licenses {
+                    license {
+                        name = 'GNU General Public License, Version 3.0'
+                        url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'juhu1705'
+                        name = 'Fabius Mettner'
+                        email = 'fabius1705@live.de'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/juhu1705/ConfigManager.git'
+                    developerConnection = 'scm:git:ssh://github.com/juhu1705/ConfigManager.git'
+                    url = 'http://github.com/juhu1705/ConfigManager'
+                }
+            }
+        }
+    }
     repositories {
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/juhu1705/configmanager")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
-    publications {
-        gpr(MavenPublication) {
-            group 'de.noisruker'
-            version '1.0.2'
-            artifactId 'configmanager'
-
-            from(components.java)
-        }
-    }
 }
-
-
 
 repositories {
     mavenCentral()
-    maven {
-        url = uri("https://maven.pkg.github.com/juhu1705/eventmanager")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+
+    def dependencies = ["eventmanager", "logger"]
+    dependencies.forEach(depName -> {
+        maven {
+            url = uri("https://maven.pkg.github.com/juhu1705/" + depName)
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
         }
-    }
-    maven {
-        url = uri("https://maven.pkg.github.com/juhu1705/logger")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-        }
-    }
+    })
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0'
-    implementation 'de.noisruker:logger:1.0.2'
-    implementation 'de.noisruker:event-manager:1.0.2'
-    implementation 'org.controlsfx:controlsfx:11.1.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    implementation 'de.noisruker:logger:1.0.3'
+    implementation 'de.noisruker:event-manager:1.1.0'
+    implementation 'org.controlsfx:controlsfx:11.1.1'
 }
 
 test {
     useJUnitPlatform()
+}
+
+javadoc {
+    if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
 }

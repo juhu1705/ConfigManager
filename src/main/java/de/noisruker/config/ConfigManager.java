@@ -59,7 +59,6 @@ import static de.noisruker.logger.Logger.LOGGER;
  *
  * @author Fabius Mettner
  * @version 1.0
- * @category Config
  */
 public class ConfigManager {
 
@@ -133,7 +132,7 @@ public class ConfigManager {
      *          Annotation {@link ConfigElement} tragen, registriert werden sollen.
      * @throws IOException Sollte ein Fehler beim Registrieren der Felder auftreten.
      */
-    public void register(Class c) throws IOException {
+    public void register(Class<?> c) throws IOException {
         for (Field f : c.getFields()) {
 
             if (f.getAnnotation(ConfigElement.class) != null)
@@ -146,8 +145,8 @@ public class ConfigManager {
      * Lädt die unter {@link ConfigElement#defaultValue() dem Standartwert}
      * mitgegebenen Werte in die jeweiligen Felder, sollten diese nicht
      * standardmäßig über einen Wert verfügen.
-     *
-     * @implNote Diese Methode funktioniert nur bedingt. Daher ist es ratsam, die
+     * <p>
+     * Diese Methode funktioniert nur bedingt. Daher ist es ratsam, die
      * Felder direkt zu initialisieren.
      */
     public void loadDefault() {
@@ -159,14 +158,14 @@ public class ConfigManager {
                     ConfigElement e = r.getAnnotation(ConfigElement.class);
                     String dv = e.defaultValue();
 
-                    if (e.type().equals("check"))
+                    if (e.type() == ConfigElementType.CHECK)
                         r.set(this, Boolean.parseBoolean(dv));
-                    else if (e.type().equals("count"))
+                    else if (e.type() == ConfigElementType.COUNT)
                         r.set(this, Integer.parseInt(dv));
-                    else if (e.type().equals("text"))
+                    else if (e.type() == ConfigElementType.CHOOSE || e.type() == ConfigElementType.TEXT)
                         r.set(this, dv);
                     else
-                        r.set(this, dv);
+                        throw new UnsupportedOperationException("Wrong type of the arguments type! Type: " + e.type());
 
                     this.onConfigChanged(e.name(), dv);
                 }
@@ -333,6 +332,12 @@ public class ConfigManager {
         tree.getSelectionModel().select(0);
     }
 
+    /**
+     * Hilfsmethode für {@link ConfigManager#createMenuTree(TreeView, VBox, PropertyResourceBundle)}. Listet alle dem im TreeView ausgewählten Element zugeordneten Konfigurationswerte in der VBox auf.
+     * @param tree Der TreeView, der die Konfigurationspfade enthält
+     * @param configurations Die VBox in der die Werte Einstellbar sein sollen
+     * @param language Das Sprachpaket auf das zurückgegriffen werden soll oder null, wenn keines genutzt wird
+     */
     private void displayConfigValues(final TreeView<String> tree, final VBox configurations, final PropertyResourceBundle language) {
         listeners.clear();
 
@@ -398,9 +403,9 @@ public class ConfigManager {
 
                 toggleSwitch.selectedProperty().addListener((o, oldValue, newValue) -> {
                     if (oldValue != newValue) {
-                        Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
-                        if(message instanceof String) {
-                            LOGGER.log(Level.WARNING, (String) message,
+                        String message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
+                        if(message != null) {
+                            LOGGER.log(Level.WARNING, message,
                                     new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
                             toggleSwitch.setSelected(oldValue);
                             return;
@@ -448,9 +453,9 @@ public class ConfigManager {
                     cb.getValueFactory().valueProperty().addListener((o, oldValue, newValue) -> {
                         try {
                             if (!Objects.equals(oldValue, newValue)) {
-                                Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
-                                if(message instanceof String) {
-                                    LOGGER.log(Level.WARNING, (String) message,
+                                String message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), oldValue.toString(), newValue.toString()));
+                                if(message != null) {
+                                    LOGGER.log(Level.WARNING, message,
                                             new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
                                     cb.getValueFactory().setValue(oldValue);
                                     return;
@@ -494,9 +499,9 @@ public class ConfigManager {
 
                 cb.addEventHandler(KeyEvent.KEY_RELEASED, events -> {
                     try {
-                        Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getText(), cb.getText()));
-                        if(message instanceof String) {
-                            LOGGER.log(Level.WARNING, (String) message,
+                        String message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getText(), cb.getText()));
+                        if(message != null) {
+                            LOGGER.log(Level.WARNING, message,
                                     new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
                             try {
                                 cb.setText((String) f.get(null));
@@ -560,9 +565,9 @@ public class ConfigManager {
 
                 cb.addEventHandler(ActionEvent.ANY, events -> {
                     try {
-                        Object message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getValue(), cb.getValue()));
-                        if(message instanceof String) {
-                            LOGGER.log(Level.WARNING, (String) message,
+                        String message = EventManager.getInstance().triggerEvent(new ConfigChangeAllowedEvent(e.name(), cb.getValue(), cb.getValue()));
+                        if(message != null) {
+                            LOGGER.log(Level.WARNING, message,
                                     new Exception(language == null ? "Config change denied" : "warning.config_change_denied"));
                             try {
                                 cb.setValue((String) f.get(null));
@@ -664,16 +669,16 @@ public class ConfigManager {
         private final String s;
         private final ActionListener l;
 
-        public ChangeEntry(String s, ActionListener l) {
+        private ChangeEntry(String s, ActionListener l) {
             this.s = s;
             this.l = l;
         }
 
-        public String getForValue() {
+        private String getForValue() {
             return s;
         }
 
-        public ActionListener getListener() {
+        private ActionListener getListener() {
             return l;
         }
     }

@@ -26,9 +26,8 @@ import de.noisruker.event.events.Event;
  *
  * @author Juhu1705
  * @version 1.0
- * @category Config
  */
-public class ConfigChangeAllowedEvent extends Event {
+public class ConfigChangeAllowedEvent extends Event<String> {
 
     private final String entryName, entryValue, newEntryValueAsString;
 

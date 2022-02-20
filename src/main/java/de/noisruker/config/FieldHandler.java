@@ -22,7 +22,6 @@ package de.noisruker.config;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
 
 import java.lang.reflect.Field;
 
@@ -31,7 +30,6 @@ import java.lang.reflect.Field;
  *
  * @author Fabius Mettner
  * @version 1.0
- * @category Config
  * @see ContentHandler
  * @see ConfigManager#load(String)
  */
@@ -46,12 +44,12 @@ class FieldHandler implements ContentHandler {
      * Speichert die eingelesenden Werte zur Bearbeitung.
      */
     @Override
-    public void characters(char[] arg0, int arg1, int arg2) throws SAXException {
+    public void characters(char[] arg0, int arg1, int arg2) {
         currentValue = new String(arg0, arg1, arg2);
     }
 
     @Override
-    public void endDocument() throws SAXException {
+    public void endDocument() {
 
     }
 
@@ -59,7 +57,7 @@ class FieldHandler implements ContentHandler {
      * Lädt die Daten in das Programm.
      */
     @Override
-    public void endElement(String arg0, String arg1, String arg2) throws SAXException {
+    public void endElement(String arg0, String arg1, String arg2) {
         if (arg1.equals("name"))
             name = currentValue;
         if (arg1.equals("value"))
@@ -97,17 +95,17 @@ class FieldHandler implements ContentHandler {
     }
 
     @Override
-    public void endPrefixMapping(String arg0) throws SAXException {
+    public void endPrefixMapping(String arg0) {
 
     }
 
     @Override
-    public void ignorableWhitespace(char[] arg0, int arg1, int arg2) throws SAXException {
+    public void ignorableWhitespace(char[] arg0, int arg1, int arg2) {
 
     }
 
     @Override
-    public void processingInstruction(String arg0, String arg1) throws SAXException {
+    public void processingInstruction(String arg0, String arg1) {
 
     }
 
@@ -117,22 +115,22 @@ class FieldHandler implements ContentHandler {
     }
 
     @Override
-    public void skippedEntity(String arg0) throws SAXException {
+    public void skippedEntity(String arg0) {
 
     }
 
     @Override
-    public void startDocument() throws SAXException {
+    public void startDocument() {
 
     }
 
     @Override
-    public void startElement(String arg0, String arg1, String arg2, Attributes arg3) throws SAXException {
+    public void startElement(String arg0, String arg1, String arg2, Attributes arg3) {
 
     }
 
     @Override
-    public void startPrefixMapping(String arg0, String arg1) throws SAXException {
+    public void startPrefixMapping(String arg0, String arg1) {
 
     }
 

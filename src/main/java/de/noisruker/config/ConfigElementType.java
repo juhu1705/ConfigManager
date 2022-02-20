@@ -29,13 +29,12 @@ import java.util.PropertyResourceBundle;
  *
  * @author Juhu1705
  * @version 1.0
- * @category Config
  */
 public enum ConfigElementType {
     /**
      * Für Eigenschaften mit einer Liste aus möglichen Werten
-     *
-     * @implNote Die angesprochene Liste muss via {@link ConfigManager#registerOptionParameters(String, String...)} gesetzt werden, ansonsten wird dieser Wert nicht im über {@link ConfigManager#createMenuTree(TreeView, VBox, PropertyResourceBundle)} generierten GUI angezeigt.
+     * <p>
+     * Die angesprochene Liste muss via {@link ConfigManager#registerOptionParameters(String, String...)} gesetzt werden, ansonsten wird dieser Wert nicht im über {@link ConfigManager#createMenuTree(TreeView, VBox, PropertyResourceBundle)} generierten GUI angezeigt.
      */
     CHOOSE("choose"),
     /**
@@ -44,8 +43,8 @@ public enum ConfigElementType {
     CHECK("check"),
     /**
      * Für integer Zahlenwerte
-     *
-     * @implNote Über die Methode {@link ConfigManager#registerIntegerRange(String, int, int)} oder die Methoden: {@link ConfigManager#registerIntegerMax(String, int)}, {@link ConfigManager#registerIntegerMin(String, int)}, können die maximale und minimale Größe des Wertes gesetzt werden.
+     * <p>
+     * Über die Methode {@link ConfigManager#registerIntegerRange(String, int, int)} oder die Methoden: {@link ConfigManager#registerIntegerMax(String, int)}, {@link ConfigManager#registerIntegerMin(String, int)}, können die maximale und minimale Größe des Wertes gesetzt werden.
      */
     COUNT("count"),
     /**
